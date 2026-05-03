@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LyricSakura</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;600&family=Zen+Kaku+Gothic+New:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --pink: #f9b8c8; --deep: #e8829a; --dark: #c45e7a;
+    --bg: #0d0a10; --card: rgba(255,255,255,0.04);
+    --text: #f5eef0; --muted: #b09aa8;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Zen Kaku Gothic New',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; overflow-x:hidden; }
+
+  #sakura-canvas { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; }
+
+  .bg-grad {
+    position:fixed; inset:0; z-index:0;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(200,100,130,0.13) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 80% 80%, rgba(150,80,120,0.10) 0%, transparent 55%),
+      linear-gradient(160deg, #0d0a10 0%, #1a0e1c 50%, #0d0a10 100%);
+  }
+
+  .wrap { position:relative; z-index:1; max-width:800px; margin:0 auto; padding:0 20px 80px; }
+
+  /* HEADER */
+  header { text-align:center; padding:50px 0 32px; }
+  .logo { display:inline-flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .logo svg { width:34px; height:34px; fill:var(--pink); filter:drop-shadow(0 0 8px var(--pink)); animation:pulse 3s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{filter:drop-shadow(0 0 8px var(--pink));transform:rotate(0deg);} 50%{filter:drop-shadow(0 0 20px var(--pink));transform:rotate(6deg);} }
+  .logo-text { font-family:'Noto Serif JP',serif; font-size:1.85rem; font-weight:600; background:linear-gradient(135deg,var(--pink) 0%,#fff8fa 50%,var(--deep) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; letter-spacing:0.04em; }
+  .tagline { font-size:0.78rem; color:var(--muted); letter-spacing:0.18em; text-transform:uppercase; }
+
+  /* SEARCH */
+  .search-wrap { max-width:580px; margin:0 auto 28px; }
+  .search-row { display:flex; gap:10px; }
+  .search-input { flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(249,184,200,0.2); border-radius:14px; padding:13px 18px; color:var(--text); font-family:inherit; font-size:0.95rem; outline:none; transition:border-color 0.3s,box-shadow 0.3s,background 0.3s; }
+  .search-input::placeholder { color:var(--muted); }
+  .search-input:focus { border-color:var(--pink); background:rgba(255,255,255,0.08); box-shadow:0 0 0 3px rgba(249,184,200,0.10); }
+  .search-btn { background:linear-gradient(135deg,var(--deep),var(--dark)); border:none; border-radius:14px; padding:13px 24px; color:#fff; font-family:inherit; font-size:0.9rem; font-weight:700; cursor:pointer; letter-spacing:0.04em; transition:opacity 0.2s,transform 0.2s,box-shadow 0.2s; box-shadow:0 4px 20px rgba(196,94,122,0.35); white-space:nowrap; }
+  .search-btn:hover { opacity:0.88; transform:translateY(-1px); box-shadow:0 6px 28px rgba(196,94,122,0.5); }
+  .search-btn:active { transform:translateY(0); }
+  .search-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+  /* STATES */
+  .state-box { text-align:center; padding:60px 20px; color:var(--muted); }
+  .state-icon { font-size:3rem; margin-bottom:16px; opacity:0.5; }
+  .state-title { font-size:1rem; margin-bottom:8px; color:var(--text); }
+  .state-sub { font-size:0.85rem; }
+
+  /* SPINNER */
+  .loading-box { text-align:center; padding:60px 20px; }
+  .petals-spinner { position:relative; width:56px; height:56px; margin:0 auto 16px; }
+  .petals-spinner span { position:absolute; top:50%; left:50%; width:14px; height:14px; background:var(--pink); border-radius:50% 0 50% 0; transform-origin:-8px 0; opacity:0.7; }
+  .petals-spinner span:nth-child(1){transform:rotate(0deg) translateX(20px);animation:ps 1.2s 0.0s ease-in-out infinite;}
+  .petals-spinner span:nth-child(2){transform:rotate(72deg) translateX(20px);animation:ps 1.2s 0.2s ease-in-out infinite;}
+  .petals-spinner span:nth-child(3){transform:rotate(144deg) translateX(20px);animation:ps 1.2s 0.4s ease-in-out infinite;}
+  .petals-spinner span:nth-child(4){transform:rotate(216deg) translateX(20px);animation:ps 1.2s 0.6s ease-in-out infinite;}
+  .petals-spinner span:nth-child(5){transform:rotate(288deg) translateX(20px);animation:ps 1.2s 0.8s ease-in-out infinite;}
+  @keyframes ps { 0%,100%{opacity:0.15;} 50%{opacity:0.9;} }
+  .loading-text { color:var(--muted); font-size:0.88rem; }
+
+  /* RESULTS */
+  .section-label { font-size:0.75rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; }
+  .results-list { display:flex; flex-direction:column; gap:10px; }
+  .result-item { background:var(--card); border:1px solid rgba(249,184,200,0.10); border-radius:14px; padding:16px 20px; cursor:pointer; display:flex; align-items:center; gap:16px; transition:background 0.2s,border-color 0.2s,transform 0.2s; animation:fadeup 0.35s ease both; }
+  @keyframes fadeup { from{opacity:0;transform:translateY(10px);} to{opacity:1;transform:translateY(0);} }
+  .result-item:hover { background:rgba(249,184,200,0.07); border-color:rgba(249,184,200,0.3); transform:translateX(4px); }
+  .result-thumb { width:44px; height:44px; border-radius:8px; background:linear-gradient(135deg,rgba(249,184,200,0.2),rgba(196,94,122,0.2)); display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
+  .result-info { flex:1; min-width:0; }
+  .result-title { font-size:0.95rem; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* LYRIC PAGE */
+  .lyric-page { animation:fadeup 0.5s ease both; }
+  .back-btn { display:inline-flex; align-items:center; gap:7px; color:var(--muted); font-size:0.85rem; cursor:pointer; margin-bottom:24px; background:none; border:none; font-family:inherit; transition:color 0.2s; }
+  .back-btn:hover { color:var(--pink); }
+  .lyric-card { background:rgba(255,255,255,0.03); border:1px solid rgba(249,184,200,0.12); border-radius:22px; overflow:hidden; }
+  .lyric-head { padding:28px 32px 22px; border-bottom:1px solid rgba(249,184,200,0.08); background:linear-gradient(135deg,rgba(249,184,200,0.05) 0%,transparent 60%); display:flex; align-items:flex-start; gap:18px; }
+  .lyric-cover { width:68px; height:68px; border-radius:12px; background:linear-gradient(135deg,rgba(249,184,200,0.25),rgba(196,94,122,0.15)); display:flex; align-items:center; justify-content:center; font-size:1.9rem; flex-shrink:0; box-shadow:0 8px 28px rgba(0,0,0,0.4); }
+  .lyric-meta { flex:1; }
+  .lyric-song { font-family:'Noto Serif JP',serif; font-size:1.35rem; font-weight:600; line-height:1.3; margin-bottom:5px; background:linear-gradient(135deg,#fff 40%,var(--pink) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .lyric-artist { font-size:0.85rem; color:var(--pink); font-weight:700; margin-bottom:3px; }
+  .lyric-src { font-size:0.75rem; color:var(--muted); }
+  .lyric-body { padding:30px 32px; }
+  .lyric-text { font-family:'Noto Serif JP',serif; font-size:1rem; line-height:2.1; font-weight:300; white-space:pre-wrap; color:var(--text); }
+  .no-lyrics { color:var(--muted); font-size:0.9rem; text-align:center; padding:40px 0; line-height:1.8; }
+  .note-box { background:rgba(249,184,200,0.05); border:1px solid rgba(249,184,200,0.12); border-radius:10px; padding:12px 16px; font-size:0.75rem; color:var(--muted); line-height:1.7; margin-top:20px; }
+
+  ::-webkit-scrollbar{width:5px;}
+  ::-webkit-scrollbar-thumb{background:rgba(249,184,200,0.2);border-radius:10px;}
+
+  @media(max-width:560px){
+    .lyric-head{flex-direction:column;padding:20px;}
+    .lyric-body{padding:20px;}
+  }
+</style>
+</head>
+<body>
+<div class="bg-grad"></div>
+<canvas id="sakura-canvas"></canvas>
+
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <svg viewBox="0 0 40 40"><path d="M20 4C20 4 24 10 20 16C20 16 26 12 32 14C32 14 26 18 24 24C24 24 28 20 34 22C34 22 28 26 26 32C26 32 22 26 20 24C20 24 18 26 14 32C14 32 12 26 6 22C6 22 12 20 16 24C16 24 14 18 8 14C8 14 14 12 20 16C20 16 16 10 20 4Z"/><circle cx="20" cy="20" r="3" fill="#fff" opacity="0.8"/></svg>
+      <span class="logo-text">LyricSakura</span>
+    </div>
+    <p class="tagline">花の詩 · Anime &amp; J-Music Lyrics</p>
+  </header>
+
+  <div class="search-wrap">
+    <div class="search-row">
+      <input class="search-input" id="searchInput" type="text" placeholder="Search song title or artist…" autocomplete="off"/>
+      <button class="search-btn" id="searchBtn">Search</button>
+    </div>
+  </div>
+
+  <div id="app">
+    <div class="state-box">
+      <div class="state-icon">🌸</div>
+      <div class="state-title">Cari lirik anime favoritmu</div>
+      <div class="state-sub">Ketik judul lagu atau nama artis, lalu tekan Search</div>
+    </div>
+  </div>
+</div>
+
+<!-- SAKURA -->
+<script>
+(function(){
+  const cv=document.getElementById('sakura-canvas'),ctx=cv.getContext('2d');
+  let W,H,P=[];
+  function rsz(){W=cv.width=innerWidth;H=cv.height=innerHeight;}
+  function rnd(a,b){return a+Math.random()*(b-a);}
+  function np(){return{x:rnd(-40,W+40),y:rnd(-80,-10),sz:rnd(6,14),sx:rnd(-.8,.8),sy:rnd(.6,1.8),r:rnd(0,Math.PI*2),rs:rnd(-.02,.02),op:rnd(.3,.85),wb:rnd(0,Math.PI*2),ws:rnd(.01,.03)};}
+  function dp(p){
+    ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.globalAlpha=p.op;
+    ctx.beginPath();
+    ctx.moveTo(0,-p.sz);ctx.bezierCurveTo(p.sz*.6,-p.sz*.8,p.sz*.8,-p.sz*.2,0,p.sz*.4);ctx.bezierCurveTo(-p.sz*.8,-p.sz*.2,-p.sz*.6,-p.sz*.8,0,-p.sz);
+    const g=ctx.createRadialGradient(0,0,0,0,0,p.sz);
+    g.addColorStop(0,'rgba(255,230,238,.95)');g.addColorStop(.5,'rgba(249,184,200,.85)');g.addColorStop(1,'rgba(220,130,160,.6)');
+    ctx.fillStyle=g;ctx.fill();ctx.restore();
+  }
+  function tick(){
+    ctx.clearRect(0,0,W,H);
+    if(P.length<55&&Math.random()<.15)P.push(np());
+    P=P.filter(p=>p.y<H+60);
+    P.forEach(p=>{p.wb+=p.ws;p.x+=p.sx+Math.sin(p.wb)*.5;p.y+=p.sy;p.r+=p.rs;dp(p);});
+    requestAnimationFrame(tick);
+  }
+  addEventListener('resize',rsz);rsz();tick();
+})();
+</script>
+
+<!-- APP -->
+<script>
+const app = document.getElementById('app');
+const inp = document.getElementById('searchInput');
+const btn = document.getElementById('searchBtn');
+
+let lastResults = [];
+
+btn.addEventListener('click', doSearch);
+inp.addEventListener('keydown', e => { if(e.key==='Enter') doSearch(); });
+
+function esc(s){ return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; }
+
+function showLoad(msg='Searching…'){
+  app.innerHTML=`<div class="loading-box"><div class="petals-spinner"><span></span><span></span><span></span><span></span><span></span></div><div class="loading-text">${msg}</div></div>`;
+}
+
+async function doSearch(){
+  const q = inp.value.trim();
+  if(!q) return;
+  btn.disabled=true; btn.textContent='…';
+  showLoad('Searching lyrics…');
+  try {
+    const r = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+    const data = await r.json();
+    lastResults = data.results || [];
+    if(!lastResults.length){
+      app.innerHTML=`<div class="state-box"><div class="state-icon">🍃</div><div class="state-title">No results for "${esc(q)}"</div><div class="state-sub">Try a different title or artist name</div></div>`;
+    } else {
+      showResults(lastResults, q);
+    }
+  } catch(e){
+    app.innerHTML=`<div class="state-box"><div class="state-icon">🌧️</div><div class="state-title">Error</div><div class="state-sub">${esc(e.message)}</div></div>`;
+  } finally {
+    btn.disabled=false; btn.textContent='Search';
+  }
+}
+
+function showResults(results, q){
+  const rows = results.map((item,i)=>`
+    <div class="result-item" style="animation-delay:${i*.04}s" data-path="${esc(item.path)}">
+      <div class="result-thumb">🎵</div>
+      <div class="result-info">
+        <div class="result-title">${esc(item.title)}</div>
+      </div>
+    </div>`).join('');
+  app.innerHTML=`<div><p class="section-label">${results.length} results for "${esc(q)}"</p><div class="results-list">${rows}</div></div>`;
+  app.querySelectorAll('.result-item').forEach(el=>{
+    el.addEventListener('click',()=>openLyric(el.dataset.path, el.querySelector('.result-title').textContent));
+  });
+}
+
+async function openLyric(path, title){
+  showLoad('Loading lyrics…');
+  try {
+    const r = await fetch(`/api/lyrics?path=${encodeURIComponent(path)}`);
+    const data = await r.json();
+    renderLyric(data, title);
+  } catch(e){
+    app.innerHTML=`<div class="state-box"><div class="state-icon">🌧️</div><div class="state-title">Failed to load</div><div class="state-sub">${esc(e.message)}</div></div>`;
+  }
+}
+
+function renderLyric(data, fallbackTitle){
+  const title = data.title || fallbackTitle || 'Unknown Song';
+  const artist = data.artist || '';
+  const lyrics = data.lyrics || '';
+
+  app.innerHTML=`
+    <div class="lyric-page">
+      <button class="back-btn" id="backBtn">← Back to results</button>
+      <div class="lyric-card">
+        <div class="lyric-head">
+          <div class="lyric-cover">🎵</div>
+          <div class="lyric-meta">
+            <div class="lyric-song">${esc(title)}</div>
+            ${artist ? `<div class="lyric-artist">${esc(artist)}</div>` : ''}
+            <div class="lyric-src">Source: lyricsondemand.com</div>
+          </div>
+        </div>
+        <div class="lyric-body">
+          ${lyrics
+            ? `<div class="lyric-text">${esc(lyrics)}</div>`
+            : `<div class="no-lyrics">🌸 Lyrics not found for this page.<br>Try another result.</div>`
+          }
+          <div class="note-box">All lyrics are property and copyright of their respective authors, artists and labels. Lyrics provided for educational purposes only.</div>
+        </div>
+      </div>
+    </div>`;
+
+  document.getElementById('backBtn').addEventListener('click',()=>showResults(lastResults, inp.value.trim()));
+}
+</script>
+</body>
+</html>
