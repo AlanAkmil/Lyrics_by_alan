@@ -1,0 +1,8 @@
+{
+  "name": "lyricsakura",
+  "version": "1.0.0",
+  "description": "Anime lyrics web app with sakura UI",
+  "scripts": {
+    "dev": "vercel dev"
+  }
+}
